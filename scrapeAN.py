@@ -13,7 +13,7 @@ conn = sqlite3.connect('dhammavinaya.db')
 c = conn.cursor()
 
 # anguttara nikaya
-for i in range(3, 12):
+for i in range(1, 12):
     suttaListURL = 'http://www.suttacentral.net/an' + `i`
     suttaListPage = requests.get(suttaListURL)
     suttaListPageTree = html.fromstring(suttaListPage.text)
@@ -23,13 +23,14 @@ for i in range(3, 12):
         if 'href' in suttaList[j].attrib: href = suttaList[j].attrib['href']
         if '#' in href: href = href[0:href.index('#')]
         if '/pi/' in href and 'an' + `i` in href:
+            href = href.replace("/pi/", "")
             suttaListAdj.append(href)
 
     suttaListAdj = sorted(list(set(suttaListAdj)))
-    print suttaListAdj
+
     for k in range(0, len(suttaListAdj)):
         sutta = suttaListAdj[k]
-        suttaURL = 'http://www.suttacentral.net' + sutta
+        suttaURL = 'http://www.suttacentral.net/pi/' + sutta
         suttaPage = requests.get(suttaURL)
         suttaTree = html.fromstring(suttaPage.text)
         print sutta
@@ -44,10 +45,14 @@ for i in range(3, 12):
             metaArea.getparent().remove(metaArea)
 
         suttaSection = suttaTree.xpath('(//div[@id="text"])')
+        suttaSection = suttaSection[0].text_content().lower().strip()
+        suttaSection = suttaSection.replace("\"", "")
+        suttaSection = suttaSection.replace(".", "")
+        suttaSection = suttaSection.replace(",", "")
         # print suttaSection[0].text_content().strip().encode("utf-8")
 
         c.execute('insert or ignore into suttas (suttaId, nikaya, suttaText) values (?, ?, ?)',
-                    (sutta, 'A', suttaSection[0].text_content().strip()))
+                    (sutta, 'A', suttaSection.translate({ord(ch): None for ch in '0123456789'})))
         conn.commit()
 conn.close()
 
