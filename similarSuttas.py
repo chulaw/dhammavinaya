@@ -11,7 +11,9 @@ import numpy as np
 conn = sqlite3.connect('dhammavinaya.db')
 c = conn.cursor()
 
-vectorizer = TfidfVectorizer()
+stopWords = ['ti', 'kho', 'bhikkhave', 'ca', 'hoti', 'na', u'v\u0101', 'pe', u'eva\u1e43', u'ta\u1e43', 'so', 'bhikkhu', 'te', 'bhante', u'bhagav\u0101', u'na\u1e43', 'me',
+'atha', u'aya\u1e43', 'pana', u'ya\u1e43', 'tassa', 'no']
+vectorizer = TfidfVectorizer(stop_words = stopWords)
 suttaList = []
 suttaIds = []
 print "Load sutta text data..."

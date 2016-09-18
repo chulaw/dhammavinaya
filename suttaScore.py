@@ -11,7 +11,9 @@ import numpy as np
 conn = sqlite3.connect('dhammavinaya.db')
 c = conn.cursor()
 
-vectorizer = TfidfVectorizer()
+stopWords = ['ti', 'kho', 'bhikkhave', 'ca', 'hoti', 'na', u'v\u0101', 'pe', u'eva\u1e43', u'ta\u1e43', 'so', 'bhikkhu', 'te', 'bhante', u'bhagav\u0101', u'na\u1e43', 'me',
+'atha', u'aya\u1e43', 'pana', u'ya\u1e43', 'tassa', 'no']
+vectorizer = TfidfVectorizer(stop_words = stopWords)
 suttaList = []
 suttaIds = []
 print "Load sutta text data..."
@@ -34,17 +36,18 @@ nbrs = NearestNeighbors(n_neighbors=len(numCols)).fit(numCols)
 print "Calculate and store sutta score..."
 i = 0
 for index, row in numCols.iterrows():
-    neighborDistances, neighborIndices = nbrs.kneighbors(row)
+    neighborDistances, neighborIndices = nbrs.kneighbors(row.reshape(1, -1))
     # print neighborIndices
     #print neighborDistances
     # print len(neighborIndices[0])
-    suttaScore = np.median(neighborDistances[0])
-    similarSuttaCount = sum(1 if x < 1.33 else 0 for x in neighborDistances[0]) - 1
+    suttaScore = (1.414214 - np.median(neighborDistances[0])) * 100
+    similarSuttaCount = sum(1 if x**2 < 1.89 else 0 for x in neighborDistances[0]) - 1
     dissimilarSuttaCount = sum(1 if x**2 >= 1.99 else 0 for x in neighborDistances[0])
     netSimilarCount = similarSuttaCount - dissimilarSuttaCount
-    print suttaIds[i] + ", Score: " + `round(suttaScore, 3)` + ", SimilarCount: " + `similarSuttaCount` + ", DissimilarCount: " + `dissimilarSuttaCount` + ", NetCount: " + `netSimilarCount`
-    c.execute('insert or ignore into suttaScore (suttaId, suttaScore, similarSuttaCount, dissimilarSuttaCount, netSimilarCount) values (?, ?, ?, ?, ?)',
-            (suttaIds[i], suttaScore, similarSuttaCount, dissimilarSuttaCount, netSimilarCount))
+    wordCount = len(suttaList[i].split(" "))
+    print suttaIds[i] + ", Score: " + `round(suttaScore, 3)` + ", WordCount: " + `wordCount` + ", SimilarCount: " + `similarSuttaCount` + ", DissimilarCount: " + `dissimilarSuttaCount` + ", NetCount: " + `netSimilarCount`
+    c.execute('insert or ignore into suttaScore (suttaId, suttaScore, wordCount, similarSuttaCount, dissimilarSuttaCount, netSimilarCount) values (?, ?, ?, ?, ?, ?)',
+            (suttaIds[i], suttaScore, wordCount, similarSuttaCount, dissimilarSuttaCount, netSimilarCount))
     i += 1
     conn.commit()
 conn.close()
